@@ -4,16 +4,16 @@ use winit::application::ApplicationHandler;
 use winit::event::{DeviceEvent, DeviceId, StartCause, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::KeyCode;
-use winit::window::{Window, WindowId};
+use winit::window::{Window, WindowAttributes, WindowId};
 use winit_input_helper::WinitInputHelper;
 
 struct App {
-    window: Option<Window>,
+    window: Option<Box<dyn Window>>,
     input: WinitInputHelper,
 }
 
 impl ApplicationHandler for App {
-    fn window_event(&mut self, _: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, _: &dyn ActiveEventLoop, _: WindowId, event: WindowEvent) {
         // Pass every event to the WinitInputHelper.
         // It will return true if it receives a RequestedRedraw event: you should then render.
         if self.input.process_window_event(&event) {
@@ -23,11 +23,11 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, event: DeviceEvent) {
+    fn device_event(&mut self, _: &dyn ActiveEventLoop, _: Option<DeviceId>, event: DeviceEvent) {
         self.input.process_device_event(&event);
     }
 
-    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+    fn about_to_wait(&mut self, event_loop: &dyn ActiveEventLoop) {
         self.input.end_step();
 
         // We do not call window.request_redraw() here because we have nothing to render anyways
@@ -36,7 +36,9 @@ impl ApplicationHandler for App {
             || self.input.close_requested()
             || self.input.destroyed()
         {
-            println!("The application was requsted to close or the 'Q' key was pressed, quiting the application");
+            println!(
+                "The application was requsted to close or the 'Q' key was pressed, quiting the application"
+            );
             event_loop.exit();
             return;
         }
@@ -46,15 +48,24 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn new_events(&mut self, _: &ActiveEventLoop, _: StartCause) {
+    fn new_events(&mut self, _: &dyn ActiveEventLoop, _: StartCause) {
         self.input.step();
     }
 
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+    /* fn resumed(&mut self, event_loop: &dyn ActiveEventLoop) {
         if self.window.is_none() {
             self.window = Some(
                 event_loop
-                    .create_window(Window::default_attributes())
+                    .create_window(WindowAttributes::default())
+                    .unwrap(),
+            );
+        }
+    } */
+    fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
+        if self.window.is_none() {
+            self.window = Some(
+                event_loop
+                    .create_window(WindowAttributes::default())
                     .unwrap(),
             );
         }
@@ -69,10 +80,8 @@ fn main() {
     // periodically even if there is no input, so that our app can continue to update
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
-    event_loop
-        .run_app(&mut App {
-            input: WinitInputHelper::new(),
-            window: None,
-        })
-        .unwrap();
+    event_loop.run_app(App {
+        input: WinitInputHelper::new(),
+        window: None,
+    }).unwrap()
 }

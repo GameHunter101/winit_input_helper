@@ -10,11 +10,11 @@ use winit_input_helper::WinitInputHelper;
 
 struct App {
     input: WinitInputHelper,
-    window: Option<Window>,
+    window: Option<Box<dyn Window>>,
 }
 
 impl ApplicationHandler for App {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+    fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
         // This method is called when the app is resumed, including when it
         //  is first started. If we do not have a window, we have to create one.
         if self.window.is_none() {
@@ -22,7 +22,7 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn window_event(&mut self, _: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, _: &dyn ActiveEventLoop, _: WindowId, event: WindowEvent) {
         // Pass every event to the WinitInputHelper.
         // It will return true if it receives a RequestedRedraw event: you should then render.
         if self.input.process_window_event(&event) {
@@ -32,11 +32,11 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, event: DeviceEvent) {
+    fn device_event(&mut self, _: &dyn ActiveEventLoop, _: Option<DeviceId>, event: DeviceEvent) {
         self.input.process_device_event(&event);
     }
 
-    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+    fn about_to_wait(&mut self, event_loop: &dyn ActiveEventLoop) {
         self.input.end_step();
 
         // AFTER calling process_about_to_wait(), run your application logic here.
@@ -116,7 +116,7 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn new_events(&mut self, _: &ActiveEventLoop, _: StartCause) {
+    fn new_events(&mut self, _: &dyn ActiveEventLoop, _: StartCause) {
         self.input.step();
     }
 }
@@ -131,7 +131,7 @@ fn main() {
 
     // Run the app
     event_loop
-        .run_app(&mut App {
+        .run_app(App {
             input: WinitInputHelper::new(),
             window: None,
         })
@@ -166,11 +166,11 @@ mod platform {
 #[cfg(not(target_arch = "wasm32"))]
 mod platform {
     use winit::event_loop::ActiveEventLoop;
-    use winit::window::Window;
+    use winit::window::{Window, WindowAttributes};
 
-    pub fn create_window(event_loop: &ActiveEventLoop) -> Window {
+    pub fn create_window(event_loop: &dyn ActiveEventLoop) -> Box<dyn Window> {
         event_loop
-            .create_window(Window::default_attributes())
+            .create_window(WindowAttributes::default())
             .unwrap()
     }
 

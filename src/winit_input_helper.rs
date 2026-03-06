@@ -93,8 +93,8 @@ impl WinitInputHelper {
                     self.current = Some(CurrentInput::new())
                 }
             }
-            WindowEvent::DroppedFile(path) => self.dropped_file = Some(path.clone()),
-            WindowEvent::Resized(size) => {
+            WindowEvent::DragDropped { paths, .. } => self.dropped_file = Some(paths[0].clone()),
+            WindowEvent::SurfaceResized(size) => {
                 self.window_resized = Some(*size);
                 self.window_size = Some((*size).into());
             }

@@ -83,26 +83,28 @@ impl CurrentInput {
                         .push(ScanCodeAction::Released(*physical_key));
                 }
             },
-            WindowEvent::CursorMoved { position, .. } => {
+            WindowEvent::PointerMoved { position, .. } => {
                 self.cursor_point = Some((position.x as f32, position.y as f32));
             }
-            WindowEvent::MouseInput {
+            WindowEvent::PointerButton {
                 state: ElementState::Pressed,
                 button,
                 ..
             } => {
-                let button_usize = mouse_button_to_int(button);
+                let button = button.clone().mouse_button().unwrap();
+                let button_usize = mouse_button_to_int(&button);
                 self.mouse_held[button_usize] = true;
-                self.mouse_actions.push(MouseAction::Pressed(*button));
+                self.mouse_actions.push(MouseAction::Pressed(button));
             }
-            WindowEvent::MouseInput {
+            WindowEvent::PointerButton {
                 state: ElementState::Released,
                 button,
                 ..
             } => {
-                let button_usize = mouse_button_to_int(button);
+                let button = button.clone().mouse_button().unwrap();
+                let button_usize = mouse_button_to_int(&button);
                 self.mouse_held[button_usize] = false;
-                self.mouse_actions.push(MouseAction::Released(*button));
+                self.mouse_actions.push(MouseAction::Released(button));
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 // I just took this from three-rs, no idea why this magic number was chosen ¯\_(ツ)_/¯
@@ -124,7 +126,7 @@ impl CurrentInput {
     }
 
     pub fn handle_device_event(&mut self, event: &DeviceEvent) {
-        if let DeviceEvent::MouseMotion { delta, .. } = event {
+        if let DeviceEvent::PointerMotion { delta, .. } = event {
             match self.mouse_diff {
                 Some((x, y)) => self.mouse_diff = Some((x + delta.0 as f32, y + delta.1 as f32)),
                 None => self.mouse_diff = Some((delta.0 as f32, delta.1 as f32)),
@@ -160,6 +162,32 @@ pub fn mouse_button_to_int(button: &MouseButton) -> usize {
         MouseButton::Middle => 2,
         MouseButton::Back => 3,
         MouseButton::Forward => 4,
-        MouseButton::Other(byte) => 5 + *byte as usize,
+        MouseButton::Button6 => 5,
+        MouseButton::Button7 => 6,
+        MouseButton::Button8 => 7,
+        MouseButton::Button9 => 8,
+        MouseButton::Button10 => 9,
+        MouseButton::Button11 => 10,
+        MouseButton::Button12 => 11,
+        MouseButton::Button13 => 12,
+        MouseButton::Button14 => 13,
+        MouseButton::Button15 => 14,
+        MouseButton::Button16 => 15,
+        MouseButton::Button17 => 16,
+        MouseButton::Button18 => 17,
+        MouseButton::Button19 => 18,
+        MouseButton::Button20 => 19,
+        MouseButton::Button21 => 20,
+        MouseButton::Button22 => 21,
+        MouseButton::Button23 => 22,
+        MouseButton::Button24 => 23,
+        MouseButton::Button25 => 24,
+        MouseButton::Button26 => 25,
+        MouseButton::Button27 => 26,
+        MouseButton::Button28 => 27,
+        MouseButton::Button29 => 28,
+        MouseButton::Button30 => 29,
+        MouseButton::Button31 => 30,
+        MouseButton::Button32 => 31,
     }
 }
